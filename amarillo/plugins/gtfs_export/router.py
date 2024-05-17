@@ -34,11 +34,19 @@ def _assert_region_exists(region_id: str) -> Region:
 
     return region
 
-def is_cached(path : str):
+# File on disk is from the today
+def is_cached_day(path : str):
     if not os.path.isfile(path): return False
 
     timestamp = os.path.getmtime(path)
     return datetime.fromtimestamp(timestamp).date() == date.today()
+
+# File on disk is from the last minute
+def is_cached_1m(path : str):
+    if not os.path.isfile(path): return False
+
+    timestamp = os.path.getmtime(path)
+    return datetime.now() - datetime.fromtimestamp(timestamp) < timedelta(minutes=1)
 
 @router.get("/region/{region_id}/gtfs", 
     summary="Return GTFS Feed for this region",
@@ -51,11 +59,11 @@ def is_cached(path : str):
 async def get_file(region_id: str, user: str = Depends(verify_admin_api_key)):
     _assert_region_exists(region_id)
     file_path = f'data/gtfs/amarillo.{region_id}.gtfs.zip'
-    if is_cached(file_path):
-        logger.info("Returning cached response")
+    if is_cached_day(file_path):
+        # logger.info("Returning cached response")
         return FileResponse(file_path)
     
-    logger.info("Returning new response")
+    # logger.info("Returning new response")
     response = requests.get(f"{config.generator_url}/region/{region_id}/gtfs/")
     # cache response
     with open(file_path, "wb") as file:
@@ -82,7 +90,7 @@ async def get_file(region_id: str, format: str = 'protobuf', user: str = Depends
         message = "Specified format is not supported, i.e. neither protobuf nor json."
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
     
-    if is_cached(file_path):
+    if is_cached_1m(file_path):
         logger.info("Returning cached response")
         return FileResponse(file_path)
     
