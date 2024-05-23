@@ -66,8 +66,9 @@ async def get_file(region_id: str, user: str = Depends(verify_admin_api_key)):
     # logger.info("Returning new response")
     response = requests.get(f"{config.generator_url}/region/{region_id}/gtfs/")
     # cache response
-    with open(file_path, "wb") as file:
-        file.write(response.content)
+    if response.status_code == 200:
+        with open(file_path, "wb") as file:
+            file.write(response.content)
 
     return  Response(content=response.content, media_type="application/zip")
 
@@ -91,13 +92,14 @@ async def get_file(region_id: str, format: str = 'protobuf', user: str = Depends
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
     
     if is_cached_1m(file_path):
-        logger.info("Returning cached response")
+        # logger.info("Returning cached response")
         return FileResponse(file_path)
     
-    logger.info("Returning new response")
+    # logger.info("Returning new response")
     response = requests.get(f"{config.generator_url}/region/{region_id}/gtfs-rt/?format={format}")
     # cache response
-    with open(file_path, "wb") as file:
-        file.write(response.content)
+    if response.status_code == 200:
+        with open(file_path, "wb") as file:
+            file.write(response.content)
 
     return  Response(content=response.content)
