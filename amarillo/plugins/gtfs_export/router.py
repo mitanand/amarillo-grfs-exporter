@@ -1,6 +1,7 @@
 import logging
 import requests
 import os
+import glob
 from datetime import datetime, date, timedelta
 from fastapi import APIRouter, HTTPException, Response, status, Depends
 
@@ -17,10 +18,21 @@ router = APIRouter()
 
 @router.post("/export")
 async def trigger_export(admin_api_key: str = Depends(verify_admin_api_key)):
-    #import is here to avoid circular import
-    from amarillo.plugins.gtfs_export.gtfs_generator import generate_gtfs
-    generate_gtfs()
+    # Clear cache
+    files = glob.glob('data/gtfs/*')
+    for f in files:
+        os.remove(f)
+    
+    # TODO: this will probably need to be changed when GTFS files are generated separately for each region
+    # For now just use 'by'
+    response = requests.get(f"{config.generator_url}/region/by/gtfs/")
+    # cache response
+    file_path = f'data/gtfs/amarillo.by.gtfs.zip'
+    if response.status_code == 200:
+        with open(file_path, "wb") as file:
+            file.write(response.content)
 
+    return  Response(content=response.content, media_type="application/zip")
 #TODO: move to amarillo/utils?
 def _assert_region_exists(region_id: str) -> Region:
     regions: RegionService = container['regions']
