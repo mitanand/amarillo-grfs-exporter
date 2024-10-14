@@ -60,7 +60,7 @@ def is_cached_1m(path : str):
     timestamp = os.path.getmtime(path)
     return datetime.now() - datetime.fromtimestamp(timestamp) < timedelta(minutes=1)
 
-@router.get("/region/{region_id}/gtfs", 
+@router.get("/region/{region_id}/grfs", 
     summary="Return GTFS Feed for this region",
     response_description="GTFS-Feed (zip-file)",
     response_class=FileResponse,
@@ -84,7 +84,7 @@ async def get_file(region_id: str, user: str = Depends(verify_admin_api_key)):
 
     return  Response(content=response.content, media_type="application/zip")
 
-@router.get("/region/{region_id}/gtfs-rt",
+@router.get("/region/{region_id}/grfs-rt",
     summary="Return GTFS-RT Feed for this region",
     response_description="GTFS-RT-Feed",
     response_class=FileResponse,
